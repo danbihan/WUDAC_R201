@@ -1,0 +1,16 @@
+---
+title: "dplyr_basics"
+author: "Lucy Wu"
+date: "9/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. select, filter, mutate
+
+## 2. joins
+
+## 3. group_by

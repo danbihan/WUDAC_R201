@@ -1,0 +1,81 @@
+---
+title: "S1 201"
+author: "Sarah Ye"
+date: "September 18, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+```
+
+
+### JOIN
+In the real data world, it's often rare that every piece of information you want is stored in a single dataframe. Usually, different concepts are stored in different dataframes. There are many reasons for doing so:
+
+* If we have lots of data, we might not have enough storage to store all information in one place
+* We might not need all the data at once, so keeping them separate will allow for faster computations
+* ...
+
+Hence, when we have two (or more) datasets, each storing pieces of information we want, join is often used to combine them.
+
+```{r data, echo = F}
+#read in data
+students <- read.csv('students.csv', header = T)
+colnames(students)[1] <- gsub('^...','',colnames(students)[1])
+majors <- read.csv('majors.csv', header = T)
+colnames(majors)[1] <- gsub('^...','',colnames(majors)[1])
+```
+
+```{r print}
+print(students)
+print(majors)
+```
+
+Say we want to find out what major each student has. We can't just get the data from any single dataset, so we need to put the two datasets together. For a join statement, there are 3 pieces of key information:
+
+1. Type of join (to be discussed)
+2. Names of the data frames
+3. The columns on which the join takes place
+
+The syntax for join is: 
+joined_data <- type_of_join(df1, df2, by = "name of the column")
+
+```{r join}
+joined_data <- inner_join(students, majors, by = "MajorID")
+print(joined_data)
+```
+
+Combining with the select statement we discussed earlier, we can create a dataset with only the student name and their major
+
+```{r major}
+student_major <- select(joined_data, c("Name", "Major_Name"))
+print(student_major)
+```
+
+#### Types of Join
+There are 4 common types of joins, which are: 
+
+* inner_join: Returns records that have matching values in both tables
+* left_join: Returns all records from the left table, and the matched records from the right table
+* right_join: Returns all records from the right table, and the matched records from the left table
+* full_join: Returns all records when there is a match in either left or right table
+
+![](https://d33wubrfki0l68.cloudfront.net/aeab386461820b029b7e7606ccff1286f623bae1/ef0d4/diagrams/join-venn.png){width=50%}
+
+
+It's important to recognize which type of join should be used in a query. For example, if we have a table of __people__ and a table of __allergies__ with speicfic allergy types and the poeple who have that type of allergy, to know what kind of allergies each person has, it's probably a wise idea to do a LEFT JOIN from __people__ to __allergies__ (i.e. keeping all records in people) since many won't have an allergy and won't show up in the __allergies__ table.
+
+
+### MERGE
+Merge has basically the same functionality of join. It uses base R instead of dplyr (in other words you don't need to import any package for this). But join is designed to be a bit faster and work more efficiently that merge, so it's always recommended to use join over merge.
+
+General merge syntax:
+merged_date <- merge(df1, df2, by = "name of column to join on", type of join).
+
+More specifically, we have:
+
+* outer_join = merge(df1, df2, by = "colx", all = TRUE)
+* left_join = merge(df1, df2, by = "colx", all.x = TRUE)    
+* right_join = merge(df1, df2, by = "colx", all.y = TRUE)

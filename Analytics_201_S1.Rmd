@@ -1,0 +1,35 @@
+---
+title: "Analytics 201: Session 1"
+output: html_notebook
+---
+
+Welcome to WUDAC Analytics 201, Fall 2020! 
+
+In this session, we will learn how to read in a dataset, clean it up, and manipulate it using a package called _dplyr_.
+
+
+# Reading in data
+
+We will be working with a wine dataset from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php). Let's see how to read it into your R workspace.
+
+[Click here](https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv) to download the file containing the data.
+
+```{r}
+# First, move the the file to your desired folder location.
+# Then, let's tell R where to find the file.
+
+getwd() # this calls the current working directory
+
+# If this is not where you want to save your work, change your path using the command below:
+#setwd("C:/your/desired/path")
+```
+  
+Once the file is in the right location, we can read in the dataset.
+```{r}
+# The file extension is .csv, so we use the classic read.csv() command
+data <- read.csv('https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv', sep=';')
+
+### Notice the "sep=';'" argument? That tells R to recognize ";" as the delimiter (typically, the delimiter is a comma, and we don't have to specify it.)
+```
+
+Now we have our data stored in a variable, so we are ready to clean it up.

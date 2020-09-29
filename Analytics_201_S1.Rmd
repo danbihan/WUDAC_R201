@@ -9,6 +9,11 @@ Welcome to WUDAC Analytics 201, Fall 2020!
 
 In this session, we will learn how to read in a dataset, clean it up, and manipulate it using a package called _dplyr_.
 
+```{r}
+library(dplyr)
+library(magrittr)
+```
+
 
 # Reading in data
 
@@ -106,8 +111,52 @@ More specifically, we have:
 * outer_join = merge(df1, df2, by = "colx", all = TRUE)
 * left_join = merge(df1, df2, by = "colx", all.x = TRUE)    
 * right_join = merge(df1, df2, by = "colx", all.y = TRUE)
-  
-  
+
+### GROUP BY
+
+Suppose we want to see the average pH of all wines in the dataset. Then we can simply use
+
+```{r}
+mean(data$pH)
+```
+
+But what if we want to compute average pH **for each wine quality rating?** We need a couple important functions: `group_by()` and `summarize()`, which are both contained within the dplyr library.
+
+```{r}
+data %>%
+  group_by(quality) %>%
+  summarize(mean_pH = mean(pH))
+```
+
+As we can see above, `group_by()` creates a grouped table for each unique quality value. We then have to define how we want to summarize the values in each group. In this case, we used the `mean()` function, but we also could have used `sum()`:
+
+```{r}
+data %>%
+  group_by(quality) %>%
+  summarize(total_pH = sum(pH))
+```
+
+Or standard deviation:
+
+```{r}
+data %>%
+  group_by(quality) %>%
+  summarize(stddev_pH = sd(pH))
+```
+
+As long as our desired grouping is the same, we can create multiple summary columns at once; for example, say we want to look at both mean pH and mean density by quality:
+
+```{r}
+data %>%
+  group_by(quality) %>%
+  summarize(mean_pH = mean(pH), mean_density = mean(density))
+```
+
+Finally, here's a diagram explaining how `group_by()` works graphically.
+
+![](https://www.datasciencemadesimple.com/wp-content/uploads/2020/05/Generic-Groupby-Sum-1.png){width=50%}
+
+
 # Tidying Data
 ```{r}
 #Insert Data

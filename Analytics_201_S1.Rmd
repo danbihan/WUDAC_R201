@@ -9,13 +9,20 @@ Welcome to WUDAC Analytics 201, Fall 2020!
 
 In this session, we will learn how to read in a dataset, clean it up, and manipulate it using a package called _dplyr_.
 
+## 0. Loading packages
+
+For this session, we'll need just four packages:
+
 ```{r}
 library(dplyr)
+library(lubridate)
 library(magrittr)
+library(tidyr)
 ```
 
+If you get an error `there is no package called <PACKAGE NAME>’` for any of these packages, it is probably because you don't have the package(s) installed: run `install.packages(<PACKAGE NAME>)` to install the missing package(s).
 
-# Reading in data
+## 1. Reading in data
 
 We will be working with a wine dataset from the [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php). Let's see how to read it into your R workspace.
 
@@ -42,7 +49,7 @@ data <- read.csv('https://archive.ics.uci.edu/ml/machine-learning-databases/wine
 Now we have our data stored in a variable, so we are ready to clean it up.
   
   
-### JOIN
+## 2. Joins
 In the real data world, it's often rare that every piece of information you want is stored in a single dataframe. Usually, different concepts are stored in different dataframes. There are many reasons for doing so:
 
 * If we have lots of data, we might not have enough storage to store all information in one place
@@ -71,15 +78,16 @@ Say we want to find out what major each student has. We can't just get the data 
 2. Names of the data frames
 3. The columns on which the join takes place
 
-The syntax for join is: 
-joined_data <- type_of_join(df1, df2, by = "name of the column")
+The syntax for join in dplyr is: `joined_data <- type_of_join(df1, df2, by = "name of the column")`.
+
+If the column(s) you're joining on have different names in the left- and right-hand tables, like we have here, you can use the `by` argument `c('<LEFT HAND COLUMN NAME>' = '<RIGHT HAND COLUMN NAME>')`:
 
 ```{r join}
-joined_data <- inner_join(students, majors, by = "MajorID")
+joined_data <- inner_join(students, majors, by = c('MajorID' = 'orID'))
 print(joined_data)
 ```
 
-Combining with the select statement we discussed earlier, we can create a dataset with only the student name and their major
+Combining with the select statement we discussed earlier, we can create a dataset with only the student name and their major:
 
 ```{r major}
 student_major <- select(joined_data, c("Name", "Major_Name"))
@@ -89,10 +97,10 @@ print(student_major)
 #### Types of Join
 There are 4 common types of joins, which are: 
 
-* inner_join: Returns records that have matching values in both tables
-* left_join: Returns all records from the left table, and the matched records from the right table
-* right_join: Returns all records from the right table, and the matched records from the left table
-* full_join: Returns all records when there is a match in either left or right table
+* `inner_join`: Returns records that have matching values in both tables
+* `left_join`: Returns all records from the left table, and the matched records from the right table
+* `right_join`: Returns all records from the right table, and the matched records from the left table
+* `full_join`: Returns all records when there is a match in either left or right table
 
 ![](https://d33wubrfki0l68.cloudfront.net/aeab386461820b029b7e7606ccff1286f623bae1/ef0d4/diagrams/join-venn.png){width=50%}
 
@@ -100,19 +108,20 @@ There are 4 common types of joins, which are:
 It's important to recognize which type of join should be used in a query. For example, if we have a table of __people__ and a table of __allergies__ with speicfic allergy types and the poeple who have that type of allergy, to know what kind of allergies each person has, it's probably a wise idea to do a LEFT JOIN from __people__ to __allergies__ (i.e. keeping all records in people) since many won't have an allergy and won't show up in the __allergies__ table.
 
 
-### MERGE
-Merge has basically the same functionality of join. It uses base R instead of dplyr (in other words you don't need to import any package for this). But join is designed to be a bit faster and work more efficiently that merge, so it's always recommended to use join over merge.
+## 3. Merges
+
+Merge has basically the same functionality of join. It uses base R instead of dplyr (in other words, you don't need to import any additional packages to use it). But join is designed to be a bit faster and work more efficiently than merge, so it's always recommended to use join over merge.
 
 General merge syntax:
-merged_date <- merge(df1, df2, by = "name of column to join on", type of join).
+`merged_date <- merge(df1, df2, by = "name of column to join on", type of join)`.
 
 More specifically, we have:
 
-* outer_join = merge(df1, df2, by = "colx", all = TRUE)
-* left_join = merge(df1, df2, by = "colx", all.x = TRUE)    
-* right_join = merge(df1, df2, by = "colx", all.y = TRUE)
+* `outer_join = merge(df1, df2, by = "colx", all = TRUE)`
+* `left_join = merge(df1, df2, by = "colx", all.x = TRUE)`    
+* `right_join = merge(df1, df2, by = "colx", all.y = TRUE)`
 
-### GROUP BY
+## 4. Group by
 
 Suppose we want to see the average pH of all wines in the dataset. Then we can simply use
 
@@ -154,83 +163,105 @@ data %>%
 
 Finally, here's a diagram explaining how `group_by()` works graphically.
 
-![](https://www.datasciencemadesimple.com/wp-content/uploads/2020/05/Generic-Groupby-Sum-1.png){width=50%}
+![Source: datasciencemadesimple.com](images/groupby.png){width=50%}
 
 
-# Tidying Data
+## 5. Tidying Data
+
 ```{r}
-#Insert Data
+# Load Data
+arrests = read.csv('arrestssample.csv') # TODO: Make this the actual arrests data
 ```
 
+**Sampling data**
+
+If our data set is too large, it becomes unwieldy to analyze even using R. To avoid this, we can often randomly sample the data to draw valid conclusions with less computing power.
+
+We can sample by number of rows using `sample_n()` or by percentage of rows using `sample_frac()`:
+
 ```{r}
-#Tidying Data
-library(tidyverse)
+arrests.sample = sample_n(arrests, size = 9000)  # Specific number of rows; we'll use this dataset moving forward
+arrests.samplefrac = sample_frac(arrests, 0.01)  # Specific fraction of rows
 ```
 
+**Removing null values**
+
+Many real-world datasets contain null values. We usually need to deal with these before analyzing the data. One common option is to remove them, for which we can use the `is.na()` function:
+
 ```{r}
-#Sample of dataset
-arrests.sample = sample_n(arrests, size =10000)   #Specific number of rows, we'll use this dataset moving forward
-arrests.samplefrac = sample_frac(arrests, 0.01)  #Specific fraction of rows
+# Drop all rows with NA values for sub_race
+arrests.sample %>% filter(!is.na(sub_race))
 ```
 
+**Filtering data**
+
+We often only want to look at rows of the dataset that meet particular conditions. As shown below, we can use the `filter()` dplyr function to filter the data:
 
 ```{r}
-#A good way to organize data is with dplyr
-arrests.hour.race = arrests.sample %>% group_by(hour, sub_race) %>% count()
-arrests.hour.race
-```
+# Arrests occurring from noon up until 8 PM
+arrests.afternoon = arrests.sample %>% filter(hour >= 12 & hour < 20)
 
-
-```{r}
-#What about the NA values? (Use filter function)
-arrests.sample %>% filter(!is.na(sub_race)) %>% group_by(hour, sub_race) %>% count()
-#Or use drop_na
-arrests.sample = drop_na(arrests.sample, c(sub_race, sub_gender))
-```
-
-
-```{r}
-#Other filter functionality
-#Specific values (numeric)
-arrests.afternoon = arrests.sample %>% filter(hour >= 12 & hour <20)
+# Arrests occurring from 5AM up until noon
 arrests.morning = arrests.sample %>% filter(hour >= 5 & hour <12)
-#Filtering characters
+
+# Arrests with the "violent" or "property" crime codes
 arrests.violent.property = arrests.sample %>% filter(crime_code == c("violent", "property"))
-arrests.violent.property %>% group_by(crime_code, sub_gender) %>% count()
 ```
 
+**Combining/separating columns**
+
+We may also want to combine columns, which we can do using the `unite()` function:
 
 ```{r}
-#Combining Columns (Ex.Combining race and gender columns)
+# Combine race and gender columns
 arrests.sample = unite(arrests.sample, sub_race, sub_gender, col = "race_and_gender", sep = " ") 
 arrests.sample %>% group_by(race_and_gender) %>% count()
 ```
 
-```{r}
-#Separating Columns
-#Lets split this column back into the original two columns
-separate(arrests.sample, race_and_gender, sep = " ", into = c("sub_race", "sub_gender"))
-```
+Or conversely, we may want to separate columns, which we can do using the `separate()` function:
 
 ```{r}
-#Renaming columns (You can use the rename function in dplyr)
-#Lets rename off_id to officer_id
-rename(arrests.sample, Officer_id = off_id)   #Set new name = old name
+# Split this column back into the original two columns
+arrests.sample = separate(arrests.sample, race_and_gender, sep = " ", into = c("sub_race", "sub_gender"))
 ```
 
-```{r}
-#Creating new columns (mutate function)
-arrests.sample= arrests.sample %>% mutate(afternoon = if_else(hour >= 12, 1, 0))
-```
+**Renaming columns**
+
+We can use the `rename()` function from dplyr to rename columns:
 
 ```{r}
-#Formatting Dates
-#The Dates are currently in the form of a character vector. How do you find the day of the months? Slicing?
-library(lubridate) #Lubridate package for managing dates
+# Rename off_id to officer_id
+rename(arrests.sample, officer_id = off_id)  # Syntax is new name = old name
+```
+
+**Creating new columns**
+
+We can use the `mutate()` function from dplyr to create new columns based on existing columns:
+
+```{r}
+# Create new is_afternoon column, which is 1 if the arrest occurred in the afternoon and 0 otherwise 
+arrests.sample= arrests.sample %>% mutate(is_afternoon = if_else(hour >= 12, 1, 0))
+```
+
+**Formatting dates**
+
+One thing that may be particularly useful to you in your final analysis is date formatting. In the raw data, the dates are in the form of a character vector, but we might be interested filtering based on month/year/etc, so we'll need to transform the dates into something that is more easily to work with in R.
+
+Here, we'll use the `mdy()` function from the lubridate package we loaded earlier to parse these dates. We use `mdy()` because the dates are formatted MM/DD/YY in the data, but we might need to use a different function from the package for dates that are formatted differently (for example, we would use `dmy()` to parse dates of the form DD/MM/YY).
+
+We can then use the `month()` function from the lubridate package to get the month from the date. lubridate also has `year()`, `wday()` (to get the day of the week), and other functions to get the various components of a date that may be useful for you.
+
+```{r}
 ArrestDates = mdy(arrests.sample$date) #Convert the data into the date class
-month(ArrestDates)  #Find the month that the arrests occurred in
+head(month(ArrestDates), 10)  #Find the month that the arrests occurred in
 ```
 
+TODO: I think we can delete this since it's covered in the group by section
+
 ```{r}
- write.csv(arrests.sample[1:12], "/Users/antoniojimenez/Downloads/Analytics 201\\arrestssample.csv")
+# A good way to organize data is with dplyr
+arrests.hour.race = arrests.sample %>% group_by(hour, sub_race) %>% count()
+arrests.hour.race
+
+arrests.violent.property %>% group_by(crime_code, sub_gender) %>% count()
 ```

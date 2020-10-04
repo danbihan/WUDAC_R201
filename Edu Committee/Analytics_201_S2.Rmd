@@ -1,0 +1,89 @@
+---
+title: "Analytics 201: Session 3"
+output:
+  html_document
+---
+
+# Data Preprocessing (cont.)
+
+```{r}
+
+```
+
+
+# Basic Plotting
+
+```{r}
+
+```
+
+
+# ggplot
+
+## What is ggplot?
+In short, it's a plotting library that allows for more beautiful and complex plots than the default options in R. Below are some of the fundamental components of a ggplot:  
+  
+- ggplot() creates an empty coordinate graph. The idea is for you to add layers of graphs.
+- Every function in ggplot2 takes a _mapping_ argument, which is always paired with _aes(x,y)_.
+- **Aesthetic** = visual property of objects in the plot; _color, alpha, size, shape_
+- **Facets** = subplots
+- **Geom** = the geometrical object that a plot uses to represent data (e.g. bar, line)
+  
+_Code template_:
+```{r eval=F}
+ggplot(data = <DATA>) +  
+  <GEOM_FUNCTION>(  
+     mapping = aes(<MAPPINGS>),  
+     stat = <STAT>,  
+     position = <POSITION>  
+  ) +  
+  <COORDINATE_FUNCTION> +  
+  <FACET_FUNCTION>  
+```
+
+## Aesthetics
+```{r}
+# Import libraries
+library(ggplot2)
+mpg # included in ggplot2
+
+# Here, we map the aesthetic "color" to the variable "class"
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x=displ, y=hwy, color=class))
+
+# Outside of aes(), the arguments are applied to the entire plot
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x=displ, y=hwy), 
+             color='blue', alpha=0.2, size=3, shape=18)
+```
+
+## Facets
+_facet_wrap()_ lets you subplot by a single variable.  
+To subplot by multiple variables, use _facet_grid()_.
+```{r}
+# face_wrap()
+ggplot(data=mpg) +
+  geom_point(mapping = aes(x=displ, y=hwy)) +
+  facet_wrap(~ class, nrow=2)
+
+# facet_grid()
+ggplot(data=mpg) +
+  geom_point(mapping = aes(x=displ, y=hwy)) +
+  facet_grid(drv ~ cyl)
+```
+
+## Geoms
+Some aesthetics work only with certain geoms (e.g. shape would not make sense with lines.)  
+Global mapping is applied to each layer, and local maping is added on for that layer only.
+```{r}
+ggplot(data=mpg, mapping = aes(x=displ, y=hwy, color=drv)) +
+  geom_smooth(mapping = aes(linetype=drv)) +
+  geom_point()
+```
+
+
+# Geospatial Plotting
+```{r}
+
+```
+

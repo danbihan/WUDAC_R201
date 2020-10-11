@@ -7,6 +7,7 @@ output:
 # Data Preprocessing (cont.)
 
 ```{r}
+<<<<<<< HEAD
 
 ```
 
@@ -17,6 +18,60 @@ output:
 
 ```
 
+=======
+```
+
+# R studio "help"
+If we know the name of a function, but are unsure on how to use it, we can always run the command __?function_name__ in R studios to pull up the help log documentation (e.g. ?select, ?hist). Note that if the function is a part of a package, the package must be imported first for the help log to work.
+
+# Load Packages 
+```{r}
+library(dplyr)
+library(ggplot2)
+```
+
+# Plotting
+One key tool in analytics is data visualization. Indeed, a picture speaks a thousand words. We will first investigate some basic plots that base R (i.e. no packages) offers, then transition into using a powerful package called ggplot2 
+
+## Data
+We will be using a dataset called _mpg_, which is self-loaded by importing ggplot (make sure you call library(ggplot2) first). You can find more about the dataset [here](https://ggplot2.tidyverse.org/reference/mpg.html). 
+
+```{r}
+print(mpg)
+```
+
+## Some basic plots
+
+### hist
+If we want to see the distribution of city miles per gallon for all models(cty), we can make a histogram. To call up a column from a dataframe, we use the __$__ symbol. Note that it's sufficient to only specify the column graphed, but we can add in (optional) additional arguments to improve our graph.
+```{r}
+# hist(mpg$cty) this is sufficient
+hist(mpg$cty, main = 'Histogram of cty', xlab = 'miles per gallon')
+```
+In general, some main "embellishments" that work in base R:
+
+* main: the title of the graph
+* ylab/xlab: the y and x labels
+* ylim/xlim: the limits of the y/x axis. Note that they take in a vector with two numbers that signify the lower/upper limits. e.g. xlim = c(0, 100)
+
+### pie
+We may want to understand the distribution of car types using a pie chart. We first need to count how many instances of each type of car is present. There's a funciton in dplyr called count that does this. 
+```{r}
+car_types = mpg %>% count(class)
+print(car_types)
+
+```
+Note that under the hood, this is the real function being run:
+__mpg %>% group_by(class) %>% summarize(counts = n())__
+i.e. first group by class, and then do a count for each class, with n() being the function for count
+
+Then we can call up a pie chart. The format here is pie(counts of the car types, (optional)labels of car types, (optional)radius of the chart)
+```{r}
+pie(car_types$n, labels = car_types$class, radius = 1)
+```
+
+While base R does offer a variety of different types of plots (i.e. line, hist, scatter, etc), the amount of customization is limited. Furthermore, the syntax/pre-treatment required can get complicated especially when we try to have multiple components in the same graph (e.g. line charts with multiple lines). This prompts us to seek for a new way of plotting.
+>>>>>>> added RMD
 
 # ggplot
 
@@ -46,11 +101,9 @@ ggplot(data = <DATA>) +
 # Import libraries
 library(ggplot2)
 mpg # included in ggplot2
-
 # Here, we map the aesthetic "color" to the variable "class"
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x=displ, y=hwy, color=class))
-
 # Outside of aes(), the arguments are applied to the entire plot
 ggplot(data = mpg) + 
   geom_point(mapping = aes(x=displ, y=hwy), 
@@ -65,7 +118,6 @@ To subplot by multiple variables, use _facet_grid()_.
 ggplot(data=mpg) +
   geom_point(mapping = aes(x=displ, y=hwy)) +
   facet_wrap(~ class, nrow=2)
-
 # facet_grid()
 ggplot(data=mpg) +
   geom_point(mapping = aes(x=displ, y=hwy)) +
@@ -84,6 +136,4 @@ ggplot(data=mpg, mapping = aes(x=displ, y=hwy, color=drv)) +
 
 # Geospatial Plotting
 ```{r}
-
 ```
-

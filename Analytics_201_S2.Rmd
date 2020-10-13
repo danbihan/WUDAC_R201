@@ -6,21 +6,6 @@ output:
 
 # Data Preprocessing (cont.)
 
-```{r}
-<<<<<<< HEAD
-
-```
-
-
-# Basic Plotting
-
-```{r}
-
-```
-
-=======
-```
-
 # R studio "help"
 If we know the name of a function, but are unsure on how to use it, we can always run the command __?function_name__ in R studios to pull up the help log documentation (e.g. ?select, ?hist). Note that if the function is a part of a package, the package must be imported first for the help log to work.
 
@@ -71,7 +56,6 @@ pie(car_types$n, labels = car_types$class, radius = 1)
 ```
 
 While base R does offer a variety of different types of plots (i.e. line, hist, scatter, etc), the amount of customization is limited. Furthermore, the syntax/pre-treatment required can get complicated especially when we try to have multiple components in the same graph (e.g. line charts with multiple lines). This prompts us to seek for a new way of plotting.
->>>>>>> added RMD
 
 # ggplot
 
@@ -131,9 +115,4 @@ Global mapping is applied to each layer, and local maping is added on for that l
 ggplot(data=mpg, mapping = aes(x=displ, y=hwy, color=drv)) +
   geom_smooth(mapping = aes(linetype=drv)) +
   geom_point()
-```
-
-
-# Geospatial Plotting
-```{r}
 ```

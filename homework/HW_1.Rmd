@@ -1,0 +1,129 @@
+---
+title: "Analytics 201: Homework 1"
+author: "Lucy Wu"
+date: "10/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This is a (optional) set of questions meant to provide a quick self-assessment of your understanding of Analytics 201 so far.
+
+If you have any questions, please post on the Analytics 201 Piazza or attend office hours!
+
+## Questions
+
+These questions will use a sample of the arrests dataset. You may also find it helpful to use libraries like `lubridate` and `dplyr`.
+
+0. Read in the `arrestssample.csv` and `officers.csv` datasets.
+1. Which year in the dataset has the most arrests?
+2. How many arrests in 2010 were logged under driving-related statutes (i.e., the statute description contains the word "driving")?
+3. What is the most common statute cited in an arrest at night (11PM - 5AM)? In the afternoon (12PM - 5PM)?
+4. What is the average number of arrests in 2010 for officers appointed more than 10 years ago (i.e., before 2000) vs. officers appointed less than 10 years ago? (Hint: You'll need to use `join()` for this.)
+5. Plot a histogram of arrests per officer in 2010.
+
+## Solutions
+
+```{r, message=FALSE}
+# Some helpful libraries
+library(lubridate)
+library(magrittr)
+library(dplyr)
+library(tidyr)
+```
+
+
+**0.** Read in the `arrestssample.csv` and `officers.csv` datasets.
+
+```{r}
+arrests <- read.csv('../arrestssample.csv')
+officers <- read.csv('../officers.csv')
+```
+
+
+**1.** Which year in the dataset has the most arrests?
+
+The year 2003 has the most arrests, with 1103 arrests:
+
+```{r}
+arrests %>%
+  mutate(year = year(mdy(date))) %>%
+  group_by(year) %>%
+  summarize(num_arrests = n()) %>%
+  top_n(1, num_arrests)
+```
+
+**2.** How many arrests in 2010 were logged under driving-related statutes (i.e., the statute description contains the word "driving")?
+
+There appear to be 19 driving-related arrests in 2010:
+
+```{r}
+# Filter to only 2010 arrests
+arrests_2010 <- arrests %>%
+  mutate(year = year(mdy(date))) %>%
+  filter(year == 2010)
+
+# Count all driving-related arrests using grep()
+length(grep('driving', tolower(arrests_2010$statute_description)))
+```
+
+**3.** What is the most common statute cited in an arrest at night (11PM - 5AM)? In the afternoon (12PM - 5PM)?
+
+Note that 11PM = hour 23, 5AM = hour 5, 12PM = hour 12, 5PM = hour 17.
+
+In both the night and the afternoon, the most common statute description was "issuance of warrant."
+
+```{r}
+# For the night
+arrests %>%
+  filter((hour >= 23) | (hour < 5)) %>%
+  group_by(statute_description) %>%
+  summarize(num_arrests = n()) %>%
+  top_n(1, num_arrests)
+```
+
+```{r}
+# For the afternoon
+arrests %>%
+  filter((hour >= 12) & (hour < 17)) %>%
+  group_by(statute_description) %>%
+  summarize(num_arrests = n()) %>%
+  top_n(1, num_arrests)
+```
+
+**4.** What is the average number of arrests in 2010 for officers appointed more than 10 years ago (i.e., before 2000) vs. officers appointed less than 10 years ago? (Hint: You'll need to use `join()` for this.)
+
+It looks like officers appointed more than 10 years ago have marginally fewer arrests:
+
+```{r}
+# Compute number of arrests per officer in 2010
+arrests_per_officer_2010 <- arrests %>%
+  mutate(arrest_year = year(mdy(date))) %>%
+  filter(arrest_year == 2010) %>%
+  group_by(off_id) %>%
+  summarize(num_arrests = n())
+
+# Filter only to officers appointed before 2010
+officers_2010 <- officers %>%
+  mutate(appointed_year = year(mdy(off_appointed_date))) %>%
+  filter(appointed_year < 2010)
+
+# Join with officers data
+# Need to use a right join here to ensure that officers who made no arrests are included
+arrests_with_officer_2010 <- right_join(arrests_per_officer_2010, officers_2010, by='off_id')
+arrests_with_officer_2010$num_arrests <- arrests_with_officer_2010$num_arrests %>% replace_na(0)
+
+arrests_with_officer_2010 %>%
+  mutate(year_bool = ifelse(appointed_year < 2000, '>10 years ago', '<10 years ago')) %>%
+  group_by(year_bool) %>%
+  summarize(avg_arrests = mean(num_arrests))
+```
+
+**5.** Plot a histogram of arrests per officer in 2010.
+
+```{r}
+hist(arrests_with_officer_2010$num_arrests, main='Arrests per officer (2010)', xlab='Num. arrests')
+```
+

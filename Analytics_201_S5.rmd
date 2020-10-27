@@ -1,0 +1,188 @@
+---
+title: "Analytics_201_S5"
+author: "Sarah Ye"
+date: "October 25, 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Loading Libraries and Data
+```{r}
+library(dplyr)
+data <- read.csv('arrestssample.csv')
+
+```
+
+# (a bit of) Data Cleaning 
+By this point, we are hopefully familiar with the dataset. One thing we have noticed with the data is that there are some mislabled genders. Since they only consitute ~60 counts out of the ~10k observations we have, we can just drop these columns.
+```{r}
+data %>% group_by(sub_gender) %>% count()
+data <- filter(data, sub_gender == 'MALE' | sub_gender == 'FEMALE')
+
+```
+
+# Severity Score
+With the columns __statute(law broken), statute_description, and the crime_code__, we can construct a severity score (1-10) of the crime. For example, we may come up with a scale like this:
+
+1. All __chicago municipal crimes__ (i.e. crime_code = 'MCC')
+2. __Cannabis Holdings__ (i.e. crime_code = 'drug', statute_description contains keyword 'CANNABIS')
+3. Everything else. This includes everything in the 'other' and 'TRF' categories. They are mostly about __missing/illegal licence (TRF) and trespassing (other)__ (i.e. crime_code = 'TRF' or 'other')
+4. __Other drug holdings__, mostly heroin and cocaine (i.e. crime_code = 'drug', everything that's not cannabis related)
+5. __Other property crimes__, mostly theft or damage crimes (i.e. crime_code = 'property', everything that's not burglary)
+6. __Burglary__, which means illegally entering a property in order to steal property from it (i.e. cimre_code = 'property', statute_description contains keyword 'BURGLARY')
+7. __Assult__, which is the threat of bodily harm (i.e. cimre_code = 'violent', statute_description contains keyword 'ASSULT')
+8. __Battery__, which is the cause of physical harm (i.e. crime_code = 'violent', statute_description contains keyword 'BATTERY')
+9. __Other violent crimes__, mostly robbery, attacks, murder (i.e. crime_code = 'violent', everything not a battery or assult crime)
+10. Arrested via a __warrent__ (i.e. crime_code = 'WRT')
+
+
+**Note**, coming up with this category is an art in itself. There are many ways to do so, and this is just a sample method that you can potentially follow. In fact, coming up with a severity score is one of the main tasks for this project that you might want to pursue.
+
+But How did we come up with this? We first filtered out each of the crime_code categories, counted and arranged them by the number of occurances, and used some Googling and a bit of subjective reasoning to come up with this score. For example, knowing how challenge it is to get an arrest warrent, we might conclude those who were arrest via warrent have the most severe crimes.
+```{r}
+data %>% group_by(crime_code) %>% count() %>% arrange(desc(n))
+
+v <- filter(data, crime_code == 'violent')
+v_counts <- v %>% group_by(statute_description) %>% count() %>% arrange(desc(n))
+
+p <- filter(data, crime_code == 'property')
+p_counts <- p %>% group_by(statute_description) %>% count() %>% arrange(desc(n))
+
+o <- filter(data, crime_code == 'other')
+o_counts <- o %>% group_by(statute_description) %>% count() %>% arrange(desc(n))
+
+m <- filter(data, crime_code == 'MCC')
+m_counts <- m %>% group_by(statute_description) %>% count() %>% arrange(desc(n))
+
+t <- filter(data, crime_code == 'TRF')
+t_counts <- t %>% group_by(statute_description) %>% count() %>% arrange(desc(n))
+
+d <- filter(data, crime_code == 'drug')
+d_counts <- d %>% group_by(statute_description) %>% count() %>% arrange(desc(n))
+
+m_counts
+```
+
+**Some highlights that we found while working on this**:
+
+* 62 people were arrested for crossing between (subway) cars on public transit
+* 10 people were arrested for riding a bicycle on the sidewalk
+* 5 people were arrested for driving in reverse when it's not safe
+* 2 people were arrested for opening a fire hydrant
+* 1 person was arrested for dumping garbage on other people's property
+
+
+# Getting the severity score
+## mutate, ifelse, grepl
+With the definition of the severity score outlined, we can now compute the severity score for each of our crimes. Here are some useful functions we will be using:
+
+* mutate -- this creates a new column. See S2 for more details. Syntax = mutate(df, col_name = ...)
+* ifelse -- this helps with assigning values based on conditions. Syntax = ifelse(condition, value if true, value if false)
+* grepl -- this detects whether a string contains a substring (i.e. check if the needle is in the haystack). Syntax = grepl(needle, hayestack, fixed = TRUE). Note that fixed means whether we need to see the entire susbtring as a whole or it can be broken down into pieces scattered in the string.
+* & -- the representation of __and__ in R when we have a conditional
+* | -- the representation of __or__
+* ! -- the representation of __not__
+
+Some examples of ifelse and grpl
+```{r}
+ifelse(1+1==2, 'Correct!', 'Incorrect')  #returns Correct!
+
+grepl("1+2", "1+2+3", fixed=TRUE) #returns True
+grepl("1+2", "123+456", fixed=TRUE) #returns False
+grepl("1+2", "123+456", fixed = FALSE) #returns True because we see all the elements of the substring
+
+ifelse(grepl('CANNABIS', 'CANNABIS - POSSESS LESS THAN 2.5 GRMS', fixed = TRUE), 2, NA)
+
+```
+
+## column 'severity'
+The code might look complicated, but it can be broken down into small pieces. Basically, we are chaining a bunch of iselse statements together. e.g. if it's a warrented arrest, label it as 10, otherwise continue running through more ifelse statements to see if anything fits.
+```{r}
+data <- mutate(data, severity = ifelse(crime_code == 'WRT', 10,
+                        ifelse(crime_code == 'violent' & grepl('BATTERY', statute_description, fixed = TRUE), 8,
+                        ifelse(crime_code == 'violent' & grepl('ASSULT', statute_description, fixed = TRUE), 7,
+                        ifelse(crime_code == 'violent' & !(grepl('BATTERY', statute_description, fixed = TRUE) | grepl('ASSULT', statute_description, fixed = TRUE)), 9,
+                        ifelse(crime_code == 'BURGLARY' & grepl('BURGLARY', statute_description, fixed = TRUE), 6,
+                        ifelse(crime_code == 'property' & !grepl('BURGLARY', statute_description, fixed = TRUE), 5,
+                        ifelse(crime_code == 'drug' & !grepl('CANNABIS', statute_description, fixed = TRUE), 4,
+                        ifelse(crime_code == 'drug' & grepl('CANNABIS', statute_description, fixed = TRUE), 2,
+                        ifelse(crime_code == 'MCC', 1, 3))))))))))
+
+head(data %>% select(crime_code, statute_description, severity) %>% tbl_df(), 10)
+
+```
+Note that we computed the cateogry 3 last since it has carries the most number of conditionals and thus require the most 'typing' to do. So we saved a lot of time by leaving it last!
+
+## Linear Regression with Severity Score
+We can now look into using linear regression to identify the correlation between particular columns of quantitative data in our dataframe. 
+```{r} 
+linreg = lm(severity ~ sub_gender + sub_race + hour + district, data)
+sm <- summary(linreg)
+sm ## Printing summary table
+m <- mean(sm$residuals^2)
+m # This metric is called the Mean Squared Error (MSE) - this represents the variance of the errors
+sqrt(m) # This metric is called the Root Mean Square Error (RMSE) - this represents the standard deviation of the errors
+
+linreg2 = lm(severity ~ district, data)
+summary(linreg2)
+linreg3 = lm(severity ~ hour, data)
+summary(linreg3)
+```
+We can view our findings along with plots of hour/district vs severity.
+```{r} 
+library(ggplot2)
+library(ggridges)
+ggplot(data, aes(x = district, y = as.factor(severity), fill = severity)) +
+  geom_density_ridges() +
+  theme_ridges() + 
+  theme(legend.position = "none")
+
+ggplot(data, aes(x = hour, y = as.factor(severity), fill = severity)) +
+  geom_density_ridges() +
+  theme_ridges() + 
+  theme(legend.position = "none")
+```
+  
+## Decision Tree
+All right, time for some exciting machine learning algorithms. Decision tree is like a flowchart. You start with the entire dataset and ask a question. Depending on the answer, your data has now been separated into multiple subgroups called "nodes." At each node you ask another question. Naturally, that's how the tree branches out.
+  
+Let's see this in action. As usual, begin by installing the relevant package, _rpart_.
+```{r}
+library(rpart)
+library(rpart.plot)
+
+# A simple tree
+tree_model <- rpart(crime_code ~ sub_gender + sub_race + hour + district, data)
+
+rpart.plot(tree_model)
+```
+
+
+## Random Forest
+You have a tree. You have another tree. In fact, you have many trees. What do you _really_ have? That's right, you have a forest.
+
+Random forest ia a method of aggregating (or "ensembling," as the lingo goes) multiple decision trees. The broad idea is that two heads are better than one, and the same goes for trees.
+  
+First things first: Be sure to install the _ranger_ package.
+```{r}
+library(ranger)
+
+forest <- ranger(crime_code ~ sub_gender + sub_race + hour + district, 
+                 data,
+                 importance='impurity')
+print(forest)
+
+# What else can we learn about our forest?
+names(forest)
+
+# Check out feature importance
+forest$variable.importance
+```
+The purpose of the "importance" call above is to allow us to determine which independent/predictor variables had the most influence on the outcome. 
+  
+What does a random forest model look like? We would love to show a diagram like we did with decision trees, but 500 trees are a bit too many to plot. So instead, we will conclude with a smoothing picture of a real forest.
+  
+![](https://api.timeforkids.com/wp-content/uploads/2019/09/final-cover-forest.jpg)
